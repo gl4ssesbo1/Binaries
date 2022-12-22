@@ -373,7 +373,7 @@ $forest=(Get-ADDomain -server $server).forest
 $eD = Get-ADDomain -server $server -Identity $forest
 $DC = $eD.DNSRoot
 
-$Root = Get-ADObject -server $server -Server $DC -SearchBase (Get-ADDomain -server $server -Identity $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
+$Root = Get-ADObject -server $server -SearchBase (Get-ADDomain -server $server -Identity $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
 
 
 "ROOT Domain ACL Report"> $finalpath\75-rootacl.csv
@@ -453,7 +453,7 @@ $computerprimaryid=Get-ADcomputer -server $server -Filter '(primaryGroupID -ne 5
 
 $eD = Get-ADDomain -server $server -Identity $forest
 $DC = $eD.DNSRoot
-$Root = Get-ADObject -server $server -Server $DC -SearchBase (Get-ADDomain -server $server -Identity $DC -Server $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
+$Root = Get-ADObject -server $server -SearchBase (Get-ADDomain -server $server -Identity $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
 
 $dcdist=$root.DistinguishedName
 
