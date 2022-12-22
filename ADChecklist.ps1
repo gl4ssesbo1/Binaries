@@ -1,6 +1,6 @@
 $path="C:\Users\penetration.test\ADSecurityCheckList"
 Write-Host "Checking $path Exist" -ForegroundColor Blue
-
+$server = "DC-DE-GRO-01.int.pohlcon.com"
 if(Test-Path -Path $path){
 Write-Host "Path exist" -ForegroundColor Green
 
@@ -30,97 +30,97 @@ $finalpath="$path\$date"
 Write-Host "$finalpath created" -ForegroundColor Blue
 
 "---All Object In Active Directory---"  > $finalpath\1-AllObject.csv 
-(Get-ADObject -filter * -Properties *).count >> $finalpath\1-AllObject.csv 
+(Get-ADObject -filter * -Properties * -server $server).count >> $finalpath\1-AllObject.csv 
 
 "---All User In Active Directory---" >$finalpath\2-AllUser.csv
 (Get-Aduser -Filter * -Properties *).count >>$finalpath\2-AllUser.csv 
 
 "---Disable Users In Active Directory---" >$finalpath\3-DisableUser.csv 
-$disableuser=Get-ADUser -Filter {enabled -eq $false} | select Name,SamaccountName,SID >>$finalpath\3-DisableUser.csv 
+$disableuser=Get-ADUser -Filter {enabled -eq $false} -server $server| select Name,SamaccountName,SID >>$finalpath\3-DisableUser.csv 
 
 
 "---Inactive Users In Active Directory---" >$finalpath\4-InactiveUser.csv 
-$inactiveuser=Get-ADUser -Filter {-not ( lastlogontimestamp -like "*") -and (enabled -eq $true)} | select Name,SamaccountName,SID >>$finalpath\4-InactiveUser.csv 
+$inactiveuser=Get-ADUser -Filter {-not ( lastlogontimestamp -like "*") -and (enabled -eq $true)} -server $server | select Name,SamaccountName,SID >>$finalpath\4-InactiveUser.csv 
 
 "---Admin Count 1 Users In Active Directory---" >$finalpath\5-admincount.csv 
-$admincount=Get-ADUser -Filter {admincount -eq 1} | select Name,SamaccountName,SID >>$finalpath\5-admincount.csv 
+$admincount=Get-ADUser -Filter {admincount -eq 1} -server $server | select Name,SamaccountName,SID >>$finalpath\5-admincount.csv 
 
 "---Password Never Expire Users In Active Directory---" >$finalpath\6-PasswordNeverExpireUser.csv
-$passwordneverexpire=Get-ADUser -Filter {PasswordNeverExpires -eq $true} | select Name,SamaccountName,SID >>$finalpath\6-PasswordNeverExpireUser.csv 
+$passwordneverexpire=Get-ADUser -Filter {PasswordNeverExpires -eq $true} -server $server | select Name,SamaccountName,SID >>$finalpath\6-PasswordNeverExpireUser.csv 
 
 "---Password Not Require Users In Active Directory---" >$finalpath\7-PasswordNotRequiredUser.csv 
-$passwordnotrequired= Get-ADUser -Filter {passwordnotrequired -eq $true} | select Name,SamaccountName,SID >>$finalpath\7-PasswordNotRequiredUser.csv 
+$passwordnotrequired= Get-ADUser -Filter {passwordnotrequired -eq $true} -server $server | select Name,SamaccountName,SID >>$finalpath\7-PasswordNotRequiredUser.csv 
 
 "---Kerberos DES Encryption Enabled Users In Active Directory---" >$finalpath\8-DesEnabledUser.csv
-$desenabled=Get-ADUser -Filter {UserAccountControl -band 0x200000} >>$finalpath\8-DesEnabledUser.csv 
+$desenabled=Get-ADUser -Filter {UserAccountControl -band 0x200000} -server $server >>$finalpath\8-DesEnabledUser.csv 
 
 
  "---Admin Count 1(Privilige Users) and AccountNotDelegated Users In Active Directory---" >$finalpath\9-SensitiveNotDelegatedUser.csv 
-$sensitiveandnotdelegated=Get-ADUser -Filter {(AdminCount -eq 1) -and (AccountNotDelegated -eq $false)} | Select-Object Samaccountname >>$finalpath\9-SensitiveNotDelegatedUser.csv 
+$sensitiveandnotdelegated=Get-ADUser -server $server -Filter {(AdminCount -eq 1) -and (AccountNotDelegated -eq $false)} | Select-Object Samaccountname >>$finalpath\9-SensitiveNotDelegatedUser.csv 
 
 "---Users Dont Require Kerberos Pre Auth In Active Directory---" >$finalpath\10-DontPreKreAuthUser.csv 
-$notkrepreauthent=Get-ADUser -Filter {UserAccountControl -band 4194304}| Select-Object SamaccountName >>$finalpath\10-DontPreKreAuthUser.csv 
+$notkrepreauthent=Get-ADUser -server $server -Filter {UserAccountControl -band 4194304}| Select-Object SamaccountName >>$finalpath\10-DontPreKreAuthUser.csv 
 
 
-$sid = (Get-ADDomain).domainsid 
+$sid = (Get-ADDomain -server $server).domainsid 
 $sid500 = $sid.ToString() + "-500" 
 
 "---RID 500 Account (Administrator) In Active Directory---" >$finalpath\11-AdministratorAccount.csv 
-$administrator=Get-ADUser -Identity $sid500 -Properties * |select name,samaccountname,PasswordLastSet >>$finalpath\11-AdministratorAccount.csv 
+$administrator=Get-ADUser -server $server -Identity $sid500 -Properties * |select name,samaccountname,PasswordLastSet >>$finalpath\11-AdministratorAccount.csv 
 
 
 $sid501=$sid.ToString() + "-501"
 "---RID 501 Account (Guest) In Active Directory---" >$finalpath\12-GuestAccount.csv 
-$guest= Get-ADUser -Identity $sid501 |select name,samaccountname,PasswordLastSet >>$finalpath\12-GuestAccount.csv 
+$guest= Get-ADUser -server $server -Identity $sid501 |select name,samaccountname,PasswordLastSet >>$finalpath\12-GuestAccount.csv 
 
 
 
 "---All Computers In Active Directory---" >$finalpath\13-Allcomputer.csv 
-(Get-Adcomputer -Filter * -Properties *).count >>$finalpath\13-Allcomputer.csv 
+(Get-Adcomputer -server $server -Filter * -Properties *).count >>$finalpath\13-Allcomputer.csv 
 
 "---Disable Computers In Active Directory---" >$finalpath\14-DisableComputers.csv 
-$disablecomputer=Get-ADcomputer -Filter {enabled -eq $false} | select Name,SamaccountName,SID >>$finalpath\14-DisableComputers.csv 
+$disablecomputer=Get-ADcomputer -server $server -Filter {enabled -eq $false} | select Name,SamaccountName,SID >>$finalpath\14-DisableComputers.csv 
 
 "---Password Not Required Computers In Active Directory---" >$finalpath\15-PasswordNotrequiredComputers.csv 
-$passwordnotrequired= Get-ADcomputer -Filter {passwordnotrequired -eq $true} | select Name,SamaccountName,SID >>$finalpath\15-PasswordNotrequiredComputers.csv 
+$passwordnotrequired= Get-ADcomputer -server $server -Filter {passwordnotrequired -eq $true} | select Name,SamaccountName,SID >>$finalpath\15-PasswordNotrequiredComputers.csv 
 
 
 
 "---Domain Admins Group Members ---" >$finalpath\16-domainadmins.csv 
-$domainadmins=Get-ADGroupMember -Identity "Domain Admins" -Recursive |select name,samaccountname,objectClass >>$finalpath\16-domainadmins.csv 
+$domainadmins=Get-ADGroupMember -server $server -Identity "Domain Admins" -Recursive |select name,samaccountname,objectClass >>$finalpath\16-domainadmins.csv 
 
 "---Enterprise Admins Group Members ---" > $finalpath\17-enterpriseadmins.csv 
-$enterpriseadmins=Get-ADGroupMember -Identity "Enterprise Admins" -Recursive |select name,samaccountname,objectClass >> $finalpath\17-enterpriseadmins.csv 
+$enterpriseadmins=Get-ADGroupMember -server $server -Identity "Enterprise Admins" -Recursive |select name,samaccountname,objectClass >> $finalpath\17-enterpriseadmins.csv 
 
 "---Schema Admins Group Members ---" >$finalpath\18-schemaadmins.csv
-$schemaadmins=Get-ADGroupMember -Identity "Schema Admins" -Recursive |select name,samaccountname,objectClass >> $finalpath\18-schemaadmins.csv
+$schemaadmins=Get-ADGroupMember -server $server -Identity "Schema Admins" -Recursive |select name,samaccountname,objectClass >> $finalpath\18-schemaadmins.csv
 
 "---Administrators Group Members ---" >$finalpath\19-administrators.csv
-$administrators=Get-ADGroupMember -Identity "Administrators" -Recursive |select name,samaccountname,objectClass >> $finalpath\19-administrators.csv
+$administrators=Get-ADGroupMember -server $server -Identity "Administrators" -Recursive |select name,samaccountname,objectClass >> $finalpath\19-administrators.csv
 
 "---Backup Operators Group Members ---" >$finalpath\20-backupoperators.csv
-$backupoperators=Get-ADGroupMember -Identity "Backup Operators" -Recursive |select name,samaccountname,objectClass >> $finalpath\20-backupoperators.csv
+$backupoperators=Get-ADGroupMember -server $server -Identity "Backup Operators" -Recursive |select name,samaccountname,objectClass >> $finalpath\20-backupoperators.csv
 
 "---Print Operators Group Members ---" >$finalpath\21-printoperators.csv
-$printoperators=Get-ADGroupMember -Identity "Print Operators" -Recursive |select name,samaccountname,objectClass >> $finalpath\21-printoperators.csv
+$printoperators=Get-ADGroupMember -server $server -Identity "Print Operators" -Recursive |select name,samaccountname,objectClass >> $finalpath\21-printoperators.csv
 
 "---Server Operators Group Members ---" >$finalpath\22-serveroperators.csv
-$serveroperators=Get-ADGroupMember -Identity "Server Operators" -Recursive |select name,samaccountname,objectClass >> $finalpath\22-serveroperators.csv
+$serveroperators=Get-ADGroupMember -server $server -Identity "Server Operators" -Recursive |select name,samaccountname,objectClass >> $finalpath\22-serveroperators.csv
 
 "---Group Policy Creator Owners Group Members ---" >$finalpath\23-gpocreator.csv
-$gpocreator=Get-ADGroupMember -Identity "Group Policy Creator Owners" -Recursive |select name,samaccountname,objectClass >> $finalpath\23-gpocreator.csv
+$gpocreator=Get-ADGroupMember -server $server -Identity "Group Policy Creator Owners" -Recursive |select name,samaccountname,objectClass >> $finalpath\23-gpocreator.csv
 
 "---Protected Users Group Members ---" >$finalpath\24-protectedusers.csv
-$protectedusers=Get-ADGroupMember -Identity "Protected Users" -Recursive |select name,samaccountname,objectClass >> $finalpath\24-protectedusers.csv
+$protectedusers=Get-ADGroupMember -server $server -Identity "Protected Users" -Recursive |select name,samaccountname,objectClass >> $finalpath\24-protectedusers.csv
 "No NTLM , DES or RC4 not Using , TGT 4 hours" >>$finalpath\24-protectedusers.csv
 
 "---Empty Group  ---" >$finalpath\25-emptygroup.csv
-$emptygroup=Get-ADGroup -LDAPFilter "(!(member=*))" | select Name  >> $finalpath\25-emptygroup.csv
+$emptygroup=Get-ADGroup -server $server -LDAPFilter "(!(member=*))" | select Name  >> $finalpath\25-emptygroup.csv
 
 
 
 "---KRBTGT Account Details ---" >$finalpath\26-krbtgt.csv
-$krbtgt=Get-ADUser -Identity "krbtgt" -Properties * | select name,samaccountname,passwordlastset >> $finalpath\26-krbtgt.csv
+$krbtgt=Get-ADUser -server $server -Identity "krbtgt" -Properties * | select name,samaccountname,passwordlastset >> $finalpath\26-krbtgt.csv
 
 "---SMB V1  ---" > $finalpath\27-smbv1.csv
 $smb1control=Get-SmbServerConfiguration |select EnableSMB1Protocol >> $finalpath\27-smbv1.csv
@@ -138,16 +138,16 @@ $lastboottime=Get-CimInstance -ClassName win32_operatingsystem | select csname, 
 
 
 
-$protectedusersdisting=(Get-ADGroup "Protected Users").distinguishedname
+$protectedusersdisting=(Get-ADGroup -server $server "Protected Users").distinguishedname
 
 "---Admin Count 1 User in Protected Users Groups  ---" >$finalpath\30-AdminUserinProtectedUser.csv
-$adminusersforprotected=Get-ADUser -LDAPFilter '(adminCount=1)' -Properties samaccountname,memberof |Where-Object {($_.MemberOf -contains $protectedusersdisting)} | Select-Object Samaccountname >>$finalpath\30-AdminUserinProtectedUser.csv
+$adminusersforprotected=Get-ADUser -server $server -LDAPFilter '(adminCount=1)' -Properties samaccountname,memberof |Where-Object {($_.MemberOf -contains $protectedusersdisting)} | Select-Object Samaccountname >>$finalpath\30-AdminUserinProtectedUser.csv
 "No NTLM , DES or RC4 not Using , TGT 4 hours" >>$finalpath\30-AdminUserinProtectedUser.csv
 
-$admincount1user=(Get-ADUser -LDAPFilter '(adminCount=1)').count
+$admincount1user=(Get-ADUser -server $server -LDAPFilter '(adminCount=1)').count
 
 "---Admin Count 1 User Not in Protected Users Groups  ---" >$finalpath\31-AdminUsernotinProtectedUser.csv
-$adminusersfornotprotected=Get-ADUser -LDAPFilter '(adminCount=1)' -Properties samaccountname,memberof |Where-Object {($_.MemberOf -notcontains $protectedusersdisting)} | Select-Object Samaccountname >>$finalpath\31-AdminUsernotinProtectedUser.csv
+$adminusersfornotprotected=Get-ADUser -server $server -LDAPFilter '(adminCount=1)' -Properties samaccountname,memberof |Where-Object {($_.MemberOf -notcontains $protectedusersdisting)} | Select-Object Samaccountname >>$finalpath\31-AdminUsernotinProtectedUser.csv
 "No NTLM , DES or RC4 not Using , TGT 4 hours" >>$finalpath\31-AdminUsernotinProtectedUser.csv
 
 "---Public Firewall Status---" >$finalpath\32-firewallpublic.csv
@@ -163,19 +163,19 @@ $Domainfirewall=Get-NetFirewallProfile |where {$_.Name -like "Domain" }|select n
 "Enabled, Inbound Block , Outbound Allow MS Baseline suggesstion" >> $finalpath\34-firewalldomain.csv
 
 
-$domains = (Get-ADForest).Domains 
+$domains = (Get-ADForest -server $server).Domains 
 
 "---All Domain Controllers Count  ---" >$finalpath\35-domaincontrollers.csv
 $domainControllers = (($domains | foreach { Get-ADDomainController -Server $_ -Filter * }).HostName).count >> $finalpath\35-domaincontrollers.csv
 
 "---Recyle Bin Status ---" >$finalpath\36-recylebin.csv
-$recyclebin=(Get-ADOptionalFeature -Filter 'name -like "Recycle Bin Feature"' -Properties *).EnabledScopes >> $finalpath\36-recylebin.csv
+$recyclebin=(Get-ADOptionalFeature -server $server -Filter 'name -like "Recycle Bin Feature"' -Properties *).EnabledScopes >> $finalpath\36-recylebin.csv
 
 "---Domain Mode  ---" >$finalpath\37-DomainMode.csv
-$domainmode=Get-ADDomain | Select-Object DomainMode  >> $finalpath\37-DomainMode.csv
+$domainmode=Get-ADDomain -server $server | Select-Object DomainMode  >> $finalpath\37-DomainMode.csv
 
 "---Forest Mode  ---" >$finalpath\38-ForestMode.csv
-$forestmode=get-adforest | Select-Object ForestMode >> $finalpath\38-ForestMode.csv
+$forestmode=get-adforest -server $server | Select-Object ForestMode >> $finalpath\38-ForestMode.csv
 
 "---Spooler Service Status  ---" >$finalpath\39-SpoolerService.csv
 $spoolerservice=Get-Service -Name Spooler | select Status >> $finalpath\39-SpoolerService.csv
@@ -188,7 +188,7 @@ $unlinkedgpo=Get-GPO -All |Where-Object { $_ | Get-GPOReport -ReportType XML| Se
 
 
 "---Fine Grained Password Policy ---" >$finalpath\42-FineGrainedPolicy.csv
-$finegrainedpolicy=Get-ADFineGrainedPasswordPolicy -Filter * | select Name >> $finalpath\42-FineGrainedPolicy.csv
+$finegrainedpolicy=Get-ADFineGrainedPasswordPolicy -server $server -Filter * | select Name >> $finalpath\42-FineGrainedPolicy.csv
 
 
 "---Audit Policy Config ---" > $finalpath\43-AuditPolicyConfig.csv
@@ -242,7 +242,7 @@ $dublicatespn=Setspn -x -f >> $finalpath\44-DuplicateSPN.csv
 $smbshare=get-smbshare | select name,path >> $finalpath\45-SMBShare.csv
 
 "Default Domain Password Policy"> $finalpath\46-DefaultDomainPasswordPolicy.csv
-$defaultpwdpolicy=Get-ADDefaultDomainPasswordPolicy | Select-Object ComplexityEnabled,MaxPasswordAge,MinPasswordAge,MinPasswordLength,PasswordHistoryCount,ReversibleEncryptionEnabled >> $finalpath\46-DefaultDomainPasswordPolicy.csv
+$defaultpwdpolicy=Get-ADDefaultDomainPasswordPolicy -server $server | Select-Object ComplexityEnabled,MaxPasswordAge,MinPasswordAge,MinPasswordLength,PasswordHistoryCount,ReversibleEncryptionEnabled >> $finalpath\46-DefaultDomainPasswordPolicy.csv
 
 
 
@@ -259,7 +259,7 @@ Store passwords using reversible encryption	Disabled" >>$finalpath\46-BaselineDe
 
 
 "Default Domain Locked Policy">$finalpath\47-LockedPolicy.csv
-$defaultlockedpolicy=Get-ADDefaultDomainPasswordPolicy | Select-Object LockoutDuration,LockoutThreshold,LockoutObservationWindow >> $finalpath\47-LockedPolicy.csv
+$defaultlockedpolicy=Get-ADDefaultDomainPasswordPolicy -server $server | Select-Object LockoutDuration,LockoutThreshold,LockoutObservationWindow >> $finalpath\47-LockedPolicy.csv
 
 "MS BaselineDefault Domain Locked Policy">$finalpath\47-BaselineLockedPolicy.csv
 "Account lockout duration	15
@@ -269,13 +269,13 @@ Reset account lockout counter after	15" >>$finalpath\47-BaselineLockedPolicy.csv
 
 
 "Site Assigned Servers">$finalpath\48-ServerSignSite.csv
-$serverassignsite=(Get-ADForest).Domains | ForEach { Get-ADDomainController -Discover -DomainName $_ } | ForEach { Get-ADDomainController -Server $_.Name -filter * } | Select Site, Name, Domain  >> $finalpath\48-ServerSignSite.csv
+$serverassignsite=(Get-ADForest -server $server).Domains | ForEach { Get-ADDomainController -Discover -DomainName $_ } | ForEach { Get-ADDomainController -Server $_.Name -filter * } | Select Site, Name, Domain  >> $finalpath\48-ServerSignSite.csv
 
 "All Subnet">$finalpath\49-AllSubnet.csv
-$allsubnet=Get-ADReplicationSubnet -filter * -Properties * | Select Name, Site >> $finalpath\49-AllSubnet.csv
+$allsubnet=Get-ADReplicationSubnet -server $server -filter * -Properties * | Select Name, Site >> $finalpath\49-AllSubnet.csv
 
 "All Site"> $finalpath\50-AllSite.csv
-$allsite=Get-ADReplicationSite -Filter * | select name >> $finalpath\50-AllSite.csv
+$allsite=Get-ADReplicationSite -server $server -Filter * | select name >> $finalpath\50-AllSite.csv
 
 "FSMO Roles">$finalpath\51-FsmoRoles.csv
 $fsmoroles=netdom query fsmo >> $finalpath\51-FsmoRoles.csv
@@ -285,35 +285,35 @@ $backups=repadmin /showbackup * >> $finalpath\52-ADbackups.csv
 
 
 "All Operating System">$finalpath\53-OperatingSystemAll.csv
-$operatingsystem=Get-ADComputer -Filter * -Properties * | Select-Object Name,OperatingSystem,OperatingSystemVersion >> $finalpath\53-OperatingSystemAll.csv
+$operatingsystem=Get-ADComputer -server $server -Filter * -Properties * | Select-Object Name,OperatingSystem,OperatingSystemVersion >> $finalpath\53-OperatingSystemAll.csv
 
 "OS Summary">$finalpath\54-OSSummary.csv
-$os2=Get-ADComputer -Filter "name -like '*'" -Properties operatingSystem | group -Property operatingSystem | Select Name,Count   >> $finalpath\54-OSSummary.csv
+$os2=Get-ADComputer -server $server -Filter "name -like '*'" -Properties operatingSystem | group -Property operatingSystem | Select Name,Count   >> $finalpath\54-OSSummary.csv
 
 $7days= (Get-Date).AddDays(-7)
 
 "Last 7 Days Created Users">$finalpath\55-last7dayscreateduser.csv
-$last7dayscreateduser=Get-ADUser -Filter {whencreated -ge $7days} | select Name,SamaccountName,SID >> $finalpath\55-last7dayscreateduser.csv
+$last7dayscreateduser=Get-ADUser -server $server -Filter {whencreated -ge $7days} | select Name,SamaccountName,SID >> $finalpath\55-last7dayscreateduser.csv
 
 "Last 7 Days Changed Users">$finalpath\56-last7dayschangeduser.csv
-$last7dayschangeduser=Get-ADUser -Filter {whenchanged -ge $7days} | select Name,SamaccountName,SID >> $finalpath\56-last7dayschangeduser.csv
+$last7dayschangeduser=Get-ADUser -server $server -Filter {whenchanged -ge $7days} | select Name,SamaccountName,SID >> $finalpath\56-last7dayschangeduser.csv
 
 "Top 5 Logon Count For User">$finalpath\57-Top5logoncount.csv
-$logoncount=get-aduser -Filter * -Properties Logoncount,Name,SamaccountName | Select-Object Name,SamaccountName,LogonCount | Sort-Object logoncount -Descending |select -First 5 >> $finalpath\57-Top5logoncount.csv
+$logoncount=get-aduser -server $server -Filter * -Properties Logoncount,Name,SamaccountName | Select-Object Name,SamaccountName,LogonCount | Sort-Object logoncount -Descending |select -First 5 >> $finalpath\57-Top5logoncount.csv
 
 
 "Last 7 Days Created Computers">$finalpath\58-last7dayscreatedcomputer.csv
-$last7dayscreatedcomputer=Get-ADcomputer -Filter {created -ge $7days} | select Name,SamaccountName,SID >> $finalpath\58-last7dayscreatedcomputer.csv
+$last7dayscreatedcomputer=Get-ADcomputer -server $server -Filter {created -ge $7days} | select Name,SamaccountName,SID >> $finalpath\58-last7dayscreatedcomputer.csv
 
 "Computer Logon Count Top 5">$finalpath\59-logoncountcomputer.csv
-$logoncountcomp=Get-ADComputer -Filter * -Properties Name,LogonCount| Select-Object Name,LogonCount | Sort-Object logoncount -Descending |select -First 5 >> $finalpath\59-logoncountcomputer.csv
+$logoncountcomp=Get-ADComputer -server $server -Filter * -Properties Name,LogonCount| Select-Object Name,LogonCount | Sort-Object logoncount -Descending |select -First 5 >> $finalpath\59-logoncountcomputer.csv
 
 "Different  Computer Account(User Account Control not 4096)">$finalpath\60-differentcomputeraccount.csv
-$differentcomputeraccount=Get-ADComputer -Filter "useraccountcontrol -ne 4096" -Properties useraccountcontrol |select name,useraccountcontrol >> $finalpath\60-differentcomputeraccount.csv
+$differentcomputeraccount=Get-ADComputer -server $server -Filter "useraccountcontrol -ne 4096" -Properties useraccountcontrol |select name,useraccountcontrol >> $finalpath\60-differentcomputeraccount.csv
 
 
 "Domain Controllers Info">$finalpath\61-Alldomaincontrollersinfo.csv
-$Alldomaincontrollersinfo=Get-ADDomainController -Filter * | Select Domain,Name,IPv4Address,IsGlobalCatalog,Site,OperatingSystem >> $finalpath\61-Alldomaincontrollersinfo.csv
+$Alldomaincontrollersinfo=Get-ADDomainController -server $server -Filter * | Select Domain,Name,IPv4Address,IsGlobalCatalog,Site,OperatingSystem >> $finalpath\61-Alldomaincontrollersinfo.csv
 
 "All Ethernet Interfaces">$finalpath\62-allethernetinterfaces.csv
 $allethernetinterfaces=netsh interface ipv4 show interfaces >> $finalpath\62-allethernetinterfaces.csv
@@ -347,11 +347,11 @@ $replicationhealth2=repadmin /replsummary >> $finalpath\68-replicationsummary.cs
 $dcdiag=dcdiag /v /c /d /e >> $finalpath\69-dcdiag.csv
 
 "All AD Service Account">$finalpath\70-serviceaccount.csv
-$serviceaccount= Get-ADServiceAccount -Filter * -Properties * |select name,samaccountname,Enabled >> $finalpath\70-serviceaccount.csv
+$serviceaccount= Get-ADServiceAccount -server $server -Filter * -Properties * |select name,samaccountname,Enabled >> $finalpath\70-serviceaccount.csv
 
 
 
-$forest=(Get-ADDomain).forest
+$forest=(Get-ADDomain -server $server).forest
 $msdcs="_msdcs." + $forest
 
 "Forest SERVICE LOCATION INFO">$finalpath\71-forestsrv.csv
@@ -367,12 +367,12 @@ $forestns=Get-DnsServerResourceRecord -RRType NS -ZoneName $forest >> $finalpath
 $msdcns=Get-DnsServerResourceRecord -RRType NS -ZoneName $msdcs  >> $finalpath\74-msdcns.csv
 
 
-$forest=(Get-ADDomain).forest
+$forest=(Get-ADDomain -server $server).forest
 
-$eD = Get-ADDomain -Identity $forest
+$eD = Get-ADDomain -server $server -Identity $forest
 $DC = $eD.DNSRoot
 
-$Root = Get-ADObject -Server $DC -SearchBase (Get-ADDomain -Identity $DC -Server $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
+$Root = Get-ADObject -server $server -Server $DC -SearchBase (Get-ADDomain -server $server -Identity $DC -Server $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
 
 
 "ROOT Domain ACL Report"> $finalpath\75-rootacl.csv
@@ -387,14 +387,14 @@ $usersfolder=Get-ChildItem -Path C:\Users | select Name,LastWriteTime >> $finalp
 
 
 "Administrator Account Last LogonDate">$finalpath\78-AdministratorAccountLastLogon.csv 
-$administratoraccountlastlogon=Get-ADUser -Identity $sid500 -Properties * |select name,samaccountname,LastLogonDate >>$finalpath\78-AdministratorAccountLastLogon.csv 
+$administratoraccountlastlogon=Get-ADUser -server $server -Identity $sid500 -Properties * |select name,samaccountname,LastLogonDate >>$finalpath\78-AdministratorAccountLastLogon.csv 
 
 
 
-$privilegegroups=Get-ADgroup -Filter * -Properties * | where {$_.Admincount -eq 1} | select samaccountname
+$privilegegroups=Get-ADgroup -server $server -Filter * -Properties * | where {$_.Admincount -eq 1} | select samaccountname
 
 $priviligeincomputers=foreach($groupsname in $privilegegroups){
-$computeraccountfind=Get-ADGroupMember -Identity $groupsname.samaccountname | where {($_.objectclass -eq "computer")} | select Name
+$computeraccountfind=Get-ADGroupMember -server $server -Identity $groupsname.samaccountname | where {($_.objectclass -eq "computer")} | select Name
 [PSCustomObject]@{
 "Group Name"=$groupsname.samaccountname
 "Computers Name"=$computeraccountfind.name
@@ -406,29 +406,29 @@ $computeraccountfind=Get-ADGroupMember -Identity $groupsname.samaccountname | wh
 $priviligeincomputers | Out-File -FilePath  $finalpath\79-ComputerAccountinPriviligeGroup.csv 
 
 "User In Privilige Groups but User is disable (Admin Count 1 Groups)">$finalpath\80-priviligeuserdisable.csv 
-$priviligeuserdisable=Get-ADUser -Filter * -Properties * | where {($_.Admincount -eq 1)-and ($_.Enabled -eq $false) -and ($_.samaccountname -ne "krbtgt")} | select samaccountname >>$finalpath\80-priviligeuserdisable.csv 
+$priviligeuserdisable=Get-ADUser -server $server -Filter * -Properties * | where {($_.Admincount -eq 1)-and ($_.Enabled -eq $false) -and ($_.samaccountname -ne "krbtgt")} | select samaccountname >>$finalpath\80-priviligeuserdisable.csv 
 
 
 $InactiveDays = 90
 $Days = (Get-Date).Adddays(-($InactiveDays))
 "Admin Accounts Not Login 90 Days">$finalpath\81-enabledadminaccountinactive.csv 
-$enabledadminaccountinactive=Get-ADUser -Filter {LastLogonTimeStamp -lt $Days -and enabled -eq $true -and admincount -eq 1 }  -Properties LastLogonTimeStamp | select Name,SamaccountName >>$finalpath\81-enabledadminaccountinactive.csv 
+$enabledadminaccountinactive=Get-ADUser -server $server -Filter {LastLogonTimeStamp -lt $Days -and enabled -eq $true -and admincount -eq 1 }  -Properties LastLogonTimeStamp | select Name,SamaccountName >>$finalpath\81-enabledadminaccountinactive.csv 
 
 
 $Recentlydays = 7
 $Days = (Get-Date).Adddays(-($Recentlydays))
 "Admin Accounts Created in 7 Days">$finalpath\82-recentlycreatedpriviligeaccount.csv 
-$recentlycreatedpriviligeaccount=Get-ADUser -Filter {WhenCreated -gt $Days -and enabled -eq $true -and admincount -eq 1 } -Properties *| Select-Object Samaccountname,WhenCreated >>$finalpath\82-recentlycreatedpriviligeaccount.csv 
+$recentlycreatedpriviligeaccount=Get-ADUser -server $server -Filter {WhenCreated -gt $Days -and enabled -eq $true -and admincount -eq 1 } -Properties *| Select-Object Samaccountname,WhenCreated >>$finalpath\82-recentlycreatedpriviligeaccount.csv 
 
 
 
-  $UsersInAdminGroups = (Get-ADGroup -LDAPFilter '(adminCount=1)') | 
+  $UsersInAdminGroups = (Get-ADGroup -server $server -LDAPFilter '(adminCount=1)') | 
     ForEach-Object {
         # Get all users from all admin groups recursively
-        Get-ADGroupMember $_ -Recursive | Where-Object {$_.ObjectClass -eq 'User'}
+        Get-ADGroupMember -server $server $_ -Recursive | Where-Object {$_.ObjectClass -eq 'User'}
     }  | Sort-Object distinguishedname | Select-Object -Unique
 
-    $admincountuser=Get-ADUser -LDAPFilter '(adminCount=1)' |select Samaccountname
+    $admincountuser=Get-ADUser -server $server -LDAPFilter '(adminCount=1)' |select Samaccountname
     ForEach($admincountuser in $admincountuser.samaccountname){
     
     if(($admincountuser -notin $UsersInAdminGroups.samaccountname)-and ($admincountuser -ne "krbtgt")){
@@ -441,22 +441,22 @@ $recentlycreatedpriviligeaccount=Get-ADUser -Filter {WhenCreated -gt $Days -and 
 
 
     "User Not In Primary Group Domain Users">$finalpath\84-userprimaryid.csv 
-$userprimaryid=Get-ADUser -Filter '(primaryGroupID -ne 513)' -Properties * |Where-Object {$_.samaccountname -ne "Guest"} |select Samaccountname >>$finalpath\84-userprimaryid.csv 
+$userprimaryid=Get-ADUser -server $server -Filter '(primaryGroupID -ne 513)' -Properties * |Where-Object {$_.samaccountname -ne "Guest"} |select Samaccountname >>$finalpath\84-userprimaryid.csv 
 
 "Computers Not In Primary Group Domain Computers">$finalpath\85-computerprimaryid.csv 
-$computerprimaryid=Get-ADcomputer -Filter '(primaryGroupID -ne 515 -and primaryGroupID -ne 516)' -Properties * |select Samaccountname,primaryGroupID >>$finalpath\85-computerprimaryid.csv 
+$computerprimaryid=Get-ADcomputer -server $server -Filter '(primaryGroupID -ne 515 -and primaryGroupID -ne 516)' -Properties * |select Samaccountname,primaryGroupID >>$finalpath\85-computerprimaryid.csv 
 
 
 
 
 
-$eD = Get-ADDomain -Identity $forest
+$eD = Get-ADDomain -server $server -Identity $forest
 $DC = $eD.DNSRoot
-$Root = Get-ADObject -Server $DC -SearchBase (Get-ADDomain -Identity $DC -Server $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
+$Root = Get-ADObject -server $server -Server $DC -SearchBase (Get-ADDomain -server $server -Identity $DC -Server $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
 
 $dcdist=$root.DistinguishedName
 
-$domaincontrollerlist=Get-ADComputer -Filter * -SearchBase "OU=Domain Controllers,$dcdist" | select DistinguishedName
+$domaincontrollerlist=Get-ADComputer -server $server -Filter * -SearchBase "OU=Domain Controllers,$dcdist" | select DistinguishedName
 
 $domaincontrollerdistinguished= $domaincontrollerlist.DistinguishedName
 
@@ -475,7 +475,7 @@ $dcownerlists| Out-File -FilePath $finalpath\86-dcownerlist.csv
 
 
 "MSDS Machine Account Quota Info">$finalpath\87-msdsmachineaccountQuota.csv 
-$msdsmachineaccountQuota=Get-ADObject -Identity ((Get-ADDomain).distinguishedname) `
+$msdsmachineaccountQuota=Get-ADObject -server $server -Identity ((Get-ADDomain -server $server).distinguishedname) `
              -Properties ms-DS-MachineAccountQuota  >>$finalpath\87-msdsmachineaccountQuota.csv 
 
 "GPO settings (User Right: Add workstations to domain configured with only high-privileged group(s)/account(s)) linked to Domain Controllers" >>$finalpath\87-msdsmachineaccountQuota.csv 
@@ -1151,7 +1151,7 @@ Audit: Force audit policy subcategory settings (Windows Vista or later) to overr
 
 
 
-$domaincontrollerou=(Get-ADDomain).DomainControllersContainer
+$domaincontrollerou=(Get-ADDomain -server $server).DomainControllersContainer
 $allgpoenabled=(Get-GPInheritance -Target $domaincontrollerou).InheritedGpoLinks 
 
 $allgpoenabled >>$finalpath\119-DomainControllerOUGpos.csv
