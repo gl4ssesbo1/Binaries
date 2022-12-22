@@ -33,7 +33,7 @@ Write-Host "$finalpath created" -ForegroundColor Blue
 (Get-ADObject -filter * -Properties * -server $server).count >> $finalpath\1-AllObject.csv 
 
 "---All User In Active Directory---" >$finalpath\2-AllUser.csv
-(Get-Aduser -Filter * -Properties *).count >>$finalpath\2-AllUser.csv 
+(Get-Aduser -server $server -Filter * -Properties *).count >>$finalpath\2-AllUser.csv 
 
 "---Disable Users In Active Directory---" >$finalpath\3-DisableUser.csv 
 $disableuser=Get-ADUser -Filter {enabled -eq $false} -server $server| select Name,SamaccountName,SID >>$finalpath\3-DisableUser.csv 
@@ -166,7 +166,7 @@ $Domainfirewall=Get-NetFirewallProfile |where {$_.Name -like "Domain" }|select n
 $domains = (Get-ADForest -server $server).Domains 
 
 "---All Domain Controllers Count  ---" >$finalpath\35-domaincontrollers.csv
-$domainControllers = (($domains | foreach { Get-ADDomainController -Server $_ -Filter * }).HostName).count >> $finalpath\35-domaincontrollers.csv
+$domainControllers = (($domains | foreach { Get-ADDomainController -server $server -Filter * }).HostName).count >> $finalpath\35-domaincontrollers.csv
 
 "---Recyle Bin Status ---" >$finalpath\36-recylebin.csv
 $recyclebin=(Get-ADOptionalFeature -server $server -Filter 'name -like "Recycle Bin Feature"' -Properties *).EnabledScopes >> $finalpath\36-recylebin.csv
@@ -180,11 +180,11 @@ $forestmode=get-adforest -server $server | Select-Object ForestMode >> $finalpat
 "---Spooler Service Status  ---" >$finalpath\39-SpoolerService.csv
 $spoolerservice=Get-Service -Name Spooler | select Status >> $finalpath\39-SpoolerService.csv
 
-"---All Gpo Count  ---" >$finalpath\40-AllGpo.csv
-$allgpo=(Get-GPO -All).count >> $finalpath\40-AllGpo.csv
+#"---All Gpo Count  ---" >$finalpath\40-AllGpo.csv
+#$allgpo=(Get-GPO -All).count >> $finalpath\40-AllGpo.csv
 
-"---UnLinked Gpo's ---" >$finalpath\41-UnlinkedGpo.csv
-$unlinkedgpo=Get-GPO -All |Where-Object { $_ | Get-GPOReport -ReportType XML| Select-String -NotMatch "<LinksTo>>"} | select DisplayName  >> $finalpath\41-UnlinkedGpo.csv
+#"---UnLinked Gpo's ---" >$finalpath\41-UnlinkedGpo.csv
+#$unlinkedgpo=Get-GPO -All |Where-Object { $_ | Get-GPOReport -ReportType XML| Select-String -NotMatch "<LinksTo>>"} | select DisplayName  >> $finalpath\41-UnlinkedGpo.csv
 
 
 "---Fine Grained Password Policy ---" >$finalpath\42-FineGrainedPolicy.csv
@@ -269,7 +269,7 @@ Reset account lockout counter after	15" >>$finalpath\47-BaselineLockedPolicy.csv
 
 
 "Site Assigned Servers">$finalpath\48-ServerSignSite.csv
-$serverassignsite=(Get-ADForest -server $server).Domains | ForEach { Get-ADDomainController -Discover -DomainName $_ } | ForEach { Get-ADDomainController -Server $_.Name -filter * } | Select Site, Name, Domain  >> $finalpath\48-ServerSignSite.csv
+$serverassignsite=(Get-ADForest -server $server).Domains | ForEach { Get-ADDomainController -server $server -Discover -DomainName $_ } | ForEach { Get-ADDomainController -Server $_.Name -filter * } | Select Site, Name, Domain  >> $finalpath\48-ServerSignSite.csv
 
 "All Subnet">$finalpath\49-AllSubnet.csv
 $allsubnet=Get-ADReplicationSubnet -server $server -filter * -Properties * | Select Name, Site >> $finalpath\49-AllSubnet.csv
@@ -277,12 +277,13 @@ $allsubnet=Get-ADReplicationSubnet -server $server -filter * -Properties * | Sel
 "All Site"> $finalpath\50-AllSite.csv
 $allsite=Get-ADReplicationSite -server $server -Filter * | select name >> $finalpath\50-AllSite.csv
 
+<#
 "FSMO Roles">$finalpath\51-FsmoRoles.csv
 $fsmoroles=netdom query fsmo >> $finalpath\51-FsmoRoles.csv
 
 "AD Backup Status">$finalpath\52-ADbackups.csv
 $backups=repadmin /showbackup * >> $finalpath\52-ADbackups.csv
-
+#>
 
 "All Operating System">$finalpath\53-OperatingSystemAll.csv
 $operatingsystem=Get-ADComputer -server $server -Filter * -Properties * | Select-Object Name,OperatingSystem,OperatingSystemVersion >> $finalpath\53-OperatingSystemAll.csv
@@ -321,8 +322,8 @@ $allethernetinterfaces=netsh interface ipv4 show interfaces >> $finalpath\62-all
 "Service Accounts running on Services">$finalpath\63-serviceaccountservices.csv
 $serviceaccountservices=Get-WmiObject win32_service | where {($_.startname -ne "LocalSystem") -and ($_.startname -ne "NT AUTHORITY\NetworkService") -and ($_.startname -ne "NT AUTHORITY\NETWORK SERVICE") -and ($_.startname -ne "NT AUTHORITY\LocalService") } | FT name, startname, startmode >> $finalpath\63-serviceaccountservices.csv
 
-"Installed Roles">$finalpath\64-installedroles.csv
-$installedroles=Get-WindowsFeature | Where {$_.installed -eq "True"} >> $finalpath\64-installedroles.csv
+#"Installed Roles">$finalpath\64-installedroles.csv
+#$installedroles=Get-WindowsFeature | Where {$_.installed -eq "True"} >> $finalpath\64-installedroles.csv
 
 "Installed Applications"> $finalpath\65-installedapplication.csv
 $installedapplication=Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | select DisplayName,Publisher,InstallDate  >> $finalpath\65-installedapplication.csv
@@ -337,14 +338,14 @@ $ntpstatus=w32tm /query /configuration >> $finalpath\66-ntpserver.csv
 $ntpstatus2=w32tm /query /status >> $finalpath\66-ntpserver.csv
 
 
-"Replication Queue">$finalpath\67-replicationqueue.csv
-$replicationhealth=repadmin /queue >> $finalpath\67-replicationqueue.csv
+#"Replication Queue">$finalpath\67-replicationqueue.csv
+#$replicationhealth=repadmin /queue >> $finalpath\67-replicationqueue.csv
 
-"Replication Summary">$finalpath\68-replicationsummary.csv
-$replicationhealth2=repadmin /replsummary >> $finalpath\68-replicationsummary.csv
+#"Replication Summary">$finalpath\68-replicationsummary.csv
+#$replicationhealth2=repadmin /replsummary >> $finalpath\68-replicationsummary.csv
 
-"DC Diag Checking">$finalpath\69-dcdiag.csv
-$dcdiag=dcdiag /v /c /d /e >> $finalpath\69-dcdiag.csv
+#"DC Diag Checking">$finalpath\69-dcdiag.csv
+#$dcdiag=dcdiag /v /c /d /e >> $finalpath\69-dcdiag.csv
 
 "All AD Service Account">$finalpath\70-serviceaccount.csv
 $serviceaccount= Get-ADServiceAccount -server $server -Filter * -Properties * |select name,samaccountname,Enabled >> $finalpath\70-serviceaccount.csv
@@ -353,7 +354,7 @@ $serviceaccount= Get-ADServiceAccount -server $server -Filter * -Properties * |s
 
 $forest=(Get-ADDomain -server $server).forest
 $msdcs="_msdcs." + $forest
-
+<#
 "Forest SERVICE LOCATION INFO">$finalpath\71-forestsrv.csv
 $forestsrv=Get-DnsServerResourceRecord -RRType SRV -ZoneName $forest >> $finalpath\71-forestsrv.csv
 
@@ -365,14 +366,14 @@ $forestns=Get-DnsServerResourceRecord -RRType NS -ZoneName $forest >> $finalpath
 
 "MSDCS NAME SERVER INFO">$finalpath\74-msdcns.csv
 $msdcns=Get-DnsServerResourceRecord -RRType NS -ZoneName $msdcs  >> $finalpath\74-msdcns.csv
-
+#>
 
 $forest=(Get-ADDomain -server $server).forest
 
 $eD = Get-ADDomain -server $server -Identity $forest
 $DC = $eD.DNSRoot
 
-$Root = Get-ADObject -server $server -Server $DC -SearchBase (Get-ADDomain -server $server -Identity $DC -Server $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
+$Root = Get-ADObject -server $server -Server $DC -SearchBase (Get-ADDomain -server $server -Identity $DC).DistinguishedName -LDAPFilter '(objectClass=domain)'
 
 
 "ROOT Domain ACL Report"> $finalpath\75-rootacl.csv
